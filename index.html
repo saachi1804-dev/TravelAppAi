@@ -26,7 +26,7 @@
   #chat.on { display: block; animation: fadeIn .35s ease-out both; }
   .msgs { position: absolute; left: 0; right: 0; top: 96px; bottom: 193px; overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px); mask-image: linear-gradient(to bottom, transparent 0, #000 22px); }
   .list { margin-top: auto; padding: 64px 20px 12px; display: flex; flex-direction: column; gap: 8px; }
-  .msg { position: relative; align-self: flex-start; animation: msgIn .38s cubic-bezier(.2,.8,.2,1) both; transform-origin: bottom left; }
+  .msg { position: relative; align-self: flex-start; animation: msgIn .28s cubic-bezier(.2,1.3,.35,1) both; transform-origin: bottom left; }
   .msg img { width: 100%; height: 100%; }
   .msg.me { align-self: flex-end; transform-origin: bottom right; }
   .bubble { max-width: 300px; padding: 12px 14px; background: #14121A; color: #fff; font-weight: 600; font-size: 15px; line-height: 1.4; border-radius: 18px 18px 6px 18px; white-space: pre-wrap; word-break: break-word; }
@@ -53,15 +53,15 @@
   @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
   @keyframes inLeft { from { transform: translateX(100%); } to { transform: none; } }
   @keyframes inUp { from { transform: translateY(100%); } to { transform: none; } }
-  @keyframes msgIn { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+  @keyframes msgIn { 0% { opacity: 0; transform: scale(.82) translateY(8px); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
   @keyframes msgOut { to { opacity: 0; transform: translateY(6px) scale(.97); height: 0; margin-top: -8px; } }
   @keyframes blink { 0%, 80%, 100% { opacity: .25; transform: none; } 40% { opacity: 1; transform: translateY(-3px); } }
   @keyframes caret { 50% { opacity: 0; } }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,79,22,.55); } 70% { box-shadow: 0 0 0 12px rgba(255,79,22,0); } 100% { box-shadow: 0 0 0 0 rgba(255,79,22,0); } }
   @keyframes pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
 
-  .msg.reveal img { animation: reveal var(--rv, 700ms) cubic-bezier(.3,.1,.3,1) both; }
-  @keyframes reveal { from { clip-path: inset(0 0 100% 0 round 18px); opacity: .4; } to { clip-path: inset(0 0 0 0 round 0); opacity: 1; } }
+  
+  
   .loader { width: 350px; box-sizing: border-box; padding: 14px 16px; border-radius: 18px 18px 18px 6px; background: rgba(255,255,255,.92); color: #14121A; font-size: 13px; }
   .loader h4 { margin: 0 0 10px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
   .spin { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid #FFD2BC; border-top-color: #FF4F16; animation: rot .8s linear infinite; box-sizing: border-box; flex: none; }
@@ -92,6 +92,21 @@
   #sheet .item.new { border-color: #FFB896; background: #FFF6F1; animation: pop .4s both; }
   #sheet .tag { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 9px; background: #FFEDE3; color: #C43C0B; font-weight: 600; font-size: 11px; }
   #sheet .x { position: absolute; right: 16px; top: 18px; width: 28px; height: 28px; border-radius: 50%; background: #F1EEEA; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
+
+  #addPerson { position: absolute; left: 234px; top: 52px; width: 40px; height: 40px; border-radius: 50%; background: #FDFDFD; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 6; }
+  #menu { position: absolute; left: 108px; top: 96px; width: 262px; z-index: 26; background: #fff; border-radius: 18px; padding: 6px; box-sizing: border-box; box-shadow: 0 12px 32px rgba(20,18,26,.16); display: none; transform-origin: top right; }
+  #menu.on { display: block; animation: menuIn .2s cubic-bezier(.2,1.2,.4,1) both; }
+  #menuScrim { position: absolute; inset: 0; z-index: 25; display: none; }
+  #menuScrim.on { display: block; }
+  #menu .mi { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 12px; border-radius: 12px; font-size: 14px; font-weight: 500; color: #14121A; cursor: pointer; }
+  #menu .mi:active { background: #F5F2EE; }
+  #menu .mi span { flex: 1; } #menu .mi em { font-style: normal; font-size: 12px; color: #8A8A8A; }
+  #menu .mi svg { width: 20px; height: 20px; flex: none; }
+  #menu .div { height: 1px; background: #EFEAE4; margin: 0 6px; }
+  #menu .mi.red { color: #D92D20; }
+  #toast { position: absolute; left: 50%; bottom: 200px; transform: translateX(-50%); background: #14121A; color: #fff; font-size: 13px; font-weight: 500; padding: 9px 14px; border-radius: 18px; z-index: 40; white-space: nowrap; display: none; }
+  #toast.on { display: block; animation: pop .3s both; }
+  @keyframes menuIn { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
 </style>
 </head>
 <body>
@@ -100,6 +115,8 @@
     <img class="abs" src="chat/bg.webp" style="left:0;top:0;width:390px;height:844px">
     <div class="msgs" id="msgs"><div class="list" id="list"></div></div>
     <img class="abs" src="chat/header.webp" style="left:20px;top:52px;width:350px;height:40px">
+    <div id="addPerson" title="Add people to this chat"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14121A" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20c.7-3.6 3.2-5.6 6.2-5.6s5.5 2 6.2 5.6"/><path d="M19 8.5v6M16 11.5h6"/></svg></div>
+    <div id="menuScrim"></div><div id="menu"><div class="mi" data-k="save"><svg viewBox="0 0 24 24" fill="none" stroke="#14121A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg><span>Save chat</span></div><div class="mi" data-k="family"><svg viewBox="0 0 24 24" fill="none" stroke="#14121A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><path d="M19 8v6M16 11h6"/></svg><span>Edit family details</span></div><div class="mi" data-k="lang"><svg viewBox="0 0 24 24" fill="none" stroke="#14121A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M8.5 4v2M6 6c1 3.5 3.5 6 6 7M11 6c-.8 3.5-3.2 6.5-6.5 8"/><path d="M13 20l3.5-8 3.5 8M14.3 17h4.4"/></svg><span>Language</span><em>English</em></div><div class="mi" data-k="size"><svg viewBox="0 0 24 24" fill="none" stroke="#14121A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18L8.5 6 13 18M5.8 14h5.4M15 18l2.5-6.5L20 18M15.8 16h3.4"/></svg><span>Text size</span><em>Default</em></div><div class="div"></div><div class="mi" data-k="mem"><svg viewBox="0 0 24 24" fill="none" stroke="#14121A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>What Gema remembers</span></div><div class="mi" data-k="agent"><svg viewBox="0 0 24 24" fill="none" stroke="#14121A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/></svg><span>Talk to an agent</span></div><div class="div"></div><div class="mi red" data-k="del"><svg viewBox="0 0 24 24" fill="none" stroke="#D92D20" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span>Delete chat</span></div></div><div id="toast"></div>
     <div class="hs abs" id="more" style="left:330px;top:52px;width:40px;height:40px"></div>
     <div class="abs" id="fab" style="left:327.5px;top:104px;width:48px;height:48px"><img src="chat/fab.webp" style="width:48px;height:48px"></div>
     <div class="abs" id="work" style="left:160px;top:104px;width:214px;height:48px"><img src="chat/work.webp" style="width:214px;height:48px"><div id="workSpin"></div></div>
@@ -372,7 +389,22 @@ document.getElementById('compHit').addEventListener('click', composerTap);
 send.addEventListener('click', composerTap);
 document.getElementById('fab').addEventListener('click', () => { if (!busy) go('907:116', { type: 'MOVE_IN', dir: 'LEFT', dur: .35 }, {}); });
 document.getElementById('work').addEventListener('click', () => go('880:116', { type: 'DISSOLVE', dur: .25 }, {}));
-document.getElementById('more').addEventListener('click', () => { if (busy) return; if (cur === '871:116') go('871:218', { type: 'DISSOLVE', dur: .25 }, {}); else openMem(); });
+const menu = document.getElementById('menu'), mscrim = document.getElementById('menuScrim'), toastEl = document.getElementById('toast');
+function toast(s) { toastEl.textContent = s; toastEl.classList.remove('on'); void toastEl.offsetWidth; toastEl.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.classList.remove('on'), 1800); }
+function closeMenu() { menu.classList.remove('on'); mscrim.classList.remove('on'); }
+document.getElementById('more').addEventListener('click', e => { e.stopPropagation(); menu.classList.add('on'); mscrim.classList.add('on'); });
+mscrim.addEventListener('click', e => { e.stopPropagation(); closeMenu(); });
+menu.querySelectorAll('.mi').forEach(m => m.addEventListener('click', e => {
+  e.stopPropagation(); closeMenu(); const k = m.dataset.k;
+  if (k === 'mem') openMem();
+  else if (k === 'family') go('866:176', { type: 'MOVE_IN', dir: 'TOP', dur: .35 }, {});
+  else if (k === 'save') toast('Chat saved. Find it in My trips.');
+  else if (k === 'agent') toast('Connecting you to a Cleartrip agent…');
+  else if (k === 'lang') toast('Choose English, हिंदी, ગુજરાતી or தமிழ்');
+  else if (k === 'size') toast('Text size: Default');
+  else if (k === 'del') toast('Delete needs your confirmation first');
+}));
+document.getElementById('addPerson').addEventListener('click', e => { e.stopPropagation(); toast('Invite Neha, Ishaan or Meera to plan with you'); });
 
 device.addEventListener('click', e => {
   if (e.target.closest('.hs') || e.target.id === 'send' || e.target.id === 'compHit') return;
