@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gema · Prototype</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+  #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  #device { position: relative; width: 390px; height: 844px; transform-origin: center center; border-radius: 36px; overflow: hidden; background: #000; }
+  .screen { position: absolute; inset: 0; background: transparent; will-change: transform, opacity; }
+  .scroller { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; overscroll-behavior: contain; }
+  .scroller::-webkit-scrollbar { display: none; }
+  .content { position: relative; width: 390px; }
+  .content > img, .fixed > img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+  .fixed { position: absolute; left: 0; width: 390px; z-index: 5; }
+  .hs { position: absolute; cursor: pointer; border-radius: 10px; z-index: 6; }
+  .hs:active { background: rgba(255,79,22,.10); }
+  body.hint .hs { background: rgba(255,79,22,.18); outline: 1.5px solid rgba(255,79,22,.6); transition: background .2s; }
+  .dots { position: absolute; z-index: 4; display: flex; gap: 6px; align-items: center; justify-content: center; }
+  .dots i { width: 8px; height: 8px; border-radius: 50%; background: #FF4F16; animation: blink 1s infinite ease-in-out; }
+  .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+  .enter-fade { animation: fadeIn var(--d) ease-out both; }
+  .enter-left { animation: inLeft var(--d) cubic-bezier(.2,.8,.2,1) both; }
+  .enter-up { animation: inUp var(--d) cubic-bezier(.2,.9,.25,1.05) both; }
+  .enter-chat { animation: chatIn var(--d) ease-out both; }
+  .leave-fade { animation: fadeOut var(--d) ease-out both; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes inLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  @keyframes inUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes chatIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div id="stage"><div id="device"></div></div>
+<script>
+const G = {"start":"864:116","screens":[{"id":"864:116","name":"00 · Welcome","w":390,"h":844,"hs":[{"x":28,"y":748,"w":334,"h":56,"layer":-1,"to":"864:147","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.5}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":0,"sx":0,"sy":0,"img":"img/864-116.webp"},{"id":"864:147","name":"01 · Home (Solo)","w":390,"h":844,"hs":[{"x":197,"y":124,"w":82.5,"h":38,"layer":-1,"to":"864:265","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":0,"sx":410,"sy":0,"img":"img/864-147.webp"},{"id":"864:265","name":"02 · Preparing family trip","w":390,"h":844,"hs":[],"timeout":{"ms":1.4,"to":"853:117","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.5}},"fixed":[],"dots":null,"typing":false,"sheet":0,"sx":820,"sy":0,"img":"img/864-265.webp"},{"id":"853:117","name":"Home","w":390,"h":844,"hs":[{"x":20,"y":616,"w":350,"h":161,"layer":-1,"to":"862:235","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":0,"sx":1230,"sy":0,"img":"img/853-117.webp"},{"id":"862:235","name":"V1 · Typed: visa expiring","w":390,"h":844,"hs":[{"x":314,"y":693,"w":44,"h":44,"layer":-1,"to":"869:247","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":1,"sx":0,"sy":0,"img":"img/862-235.webp"},{"id":"869:247","name":"S1 · Gema is typing","w":390,"h":844,"hs":[],"timeout":{"ms":1600,"to":"866:117","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},"fixed":[],"dots":null,"typing":false,"sheet":1,"sx":410,"sy":0,"img":"img/869-247.webp"},{"id":"866:117","name":"FB1 · Ask to add family","w":390,"h":844,"hs":[{"x":35,"y":558,"w":280,"h":44,"layer":-1,"to":"866:176","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":1,"sx":820,"sy":0,"img":"img/866-117.webp"},{"id":"866:176","name":"FB2 · Family builder (up to 6)","w":390,"h":844,"hs":[{"x":20,"y":436,"w":350,"h":214,"layer":-1,"to":"869:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},{"x":20,"y":765,"w":350,"h":52,"layer":-1,"to":"871:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":1,"sx":1230,"sy":0,"img":"img/866-176.webp"},{"id":"869:116","name":"FB2b · Papa’s needs (long-haul)","w":390,"h":844,"hs":[{"x":20,"y":80,"w":36,"h":36,"layer":-1,"to":"866:176","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},{"x":20,"y":758,"w":350,"h":52,"layer":-1,"to":"866:176","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":2,"sx":0,"sy":0,"img":"img/869-116.webp"},{"id":"871:116","name":"CF1 · Family added","w":390,"h":844,"hs":[{"x":330,"y":52,"w":40,"h":40,"layer":-1,"to":"871:218","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":20,"y":659,"w":350,"h":161,"layer":-1,"to":"873:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":2,"sx":410,"sy":0,"img":"img/871-116.webp"},{"id":"871:218","name":"CF2 · More menu","w":390,"h":844,"hs":[{"x":330,"y":52,"w":40,"h":40,"layer":-1,"to":"871:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":2,"sx":820,"sy":0,"img":"img/871-218.webp"},{"id":"873:116","name":"D1 · Typing dates","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"934:3252","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":2,"sx":1230,"sy":0,"img":"img/873-116.webp"},{"id":"934:3252","name":"T → D2","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"873:198","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":3,"sx":0,"sy":0,"img":"img/934-3252.webp"},{"id":"873:198","name":"D2 · Gema checks the dates","w":390,"h":844,"hs":[{"x":35,"y":463,"w":320,"h":59,"layer":-1,"to":"877:117","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":3,"sx":410,"sy":0,"img":"img/873-198.webp"},{"id":"877:117","name":"C1 · Which coast?","w":390,"h":844,"hs":[{"x":20,"y":493,"w":171.5,"h":110,"layer":-1,"to":"934:3535","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":3,"sx":820,"sy":0,"img":"img/877-117.webp"},{"id":"934:3535","name":"T → C2","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"877:218","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":3,"sx":1230,"sy":0,"img":"img/934-3535.webp"},{"id":"877:218","name":"C2 · Ideas or clean slate?","w":390,"h":844,"hs":[{"x":20,"y":613,"w":133.4,"h":34,"layer":-1,"to":"934:3779","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":4,"sx":0,"sy":0,"img":"img/877-218.webp"},{"id":"934:3779","name":"T → C3","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"877:310","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":4,"sx":410,"sy":0,"img":"img/934-3779.webp"},{"id":"877:310","name":"C3 · Noted, with a heads-up","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"934:3996","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":4,"sx":820,"sy":0,"img":"img/877-310.webp"},{"id":"934:3996","name":"T → C4","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"878:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":4,"sx":1230,"sy":0,"img":"img/934-3996.webp"},{"id":"878:116","name":"C4 · Screenshot → cities found","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"878:230","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":5,"sx":0,"sy":0,"img":"img/878-116.webp"},{"id":"878:230","name":"C5 · Flying from, and budget","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"934:4252","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":5,"sx":410,"sy":0,"img":"img/878-230.webp"},{"id":"934:4252","name":"T → C6","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"878:325","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":5,"sx":820,"sy":0,"img":"img/934-4252.webp"},{"id":"878:325","name":"C6 · Building the itinerary","w":390,"h":844,"hs":[{"x":160,"y":104,"w":214,"h":48,"layer":-1,"to":"880:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":5,"sx":1230,"sy":0,"img":"img/878-325.webp"},{"id":"880:116","name":"C7 · Gema is working (expanded)","w":390,"h":844,"hs":[{"x":280,"y":72,"w":92,"h":32,"layer":-1,"to":"878:325","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":{"ms":2.5,"to":"881:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.4}},"fixed":[],"dots":null,"typing":false,"sheet":6,"sx":0,"sy":0,"img":"img/880-116.webp"},{"id":"881:116","name":"C8 · Itinerary ready","w":390,"h":844,"hs":[{"x":35,"y":530,"w":320,"h":46,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":20,"y":659,"w":350,"h":161,"layer":-1,"to":"934:4478","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":221,"y":104,"w":149,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":6,"sx":410,"sy":0,"img":"img/881-116.webp"},{"id":"907:116","name":"I1b · Your USA plan","w":390,"h":2584,"hs":[{"x":32,"y":463,"w":326,"h":42,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":264,"y":606.5,"w":97,"h":28,"layer":-1,"to":"912:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":322,"y":746.5,"w":37,"h":15,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":322,"y":1110.5,"w":37,"h":15,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":247,"y":1468,"w":112,"h":28,"layer":-1,"to":"906:220","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":17,"y":53,"w":36,"h":36,"layer":0,"to":"BACK","t":{"type":"INSTANT"}},{"x":290,"y":56,"w":32,"h":30,"layer":0,"to":"911:125","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":146.4,"y":56,"w":226.6,"h":48,"layer":1,"to":"912:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[{"i":0,"x":0,"y":0,"w":390,"h":102,"anchor":"top","sheet":7,"sx":410,"sy":0,"img":"img/907-116_f0.webp"},{"i":1,"x":0,"y":2405.4,"w":390,"h":179,"anchor":"bottom","sheet":7,"sx":820,"sy":0,"img":"img/907-116_f1.webp"}],"dots":null,"typing":false,"sheet":7,"sx":0,"sy":0,"img":"img/907-116.webp"},{"id":"934:4478","name":"T → C9","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"882:117","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":8,"sx":0,"sy":0,"img":"img/934-4478.webp"},{"id":"915:116","name":"D1 · Decisions we haven’t taken yet","w":390,"h":1516,"hs":[{"x":17,"y":53,"w":128,"h":36,"layer":0,"to":"BACK","t":{"type":"INSTANT"}}],"timeout":null,"fixed":[{"i":0,"x":0,"y":0,"w":390,"h":102,"anchor":"top","sheet":9,"sx":410,"sy":0,"img":"img/915-116_f0.webp"},{"i":1,"x":0,"y":1405,"w":390,"h":111,"anchor":"bottom","sheet":9,"sx":820,"sy":0,"img":"img/915-116_f1.webp"}],"dots":null,"typing":false,"sheet":9,"sx":0,"sy":0,"img":"img/915-116.webp"},{"id":"912:116","name":"K1 · Review & book","w":390,"h":1225,"hs":[{"x":16,"y":58.5,"w":24,"h":24,"layer":0,"to":"BACK","t":{"type":"INSTANT"}},{"x":113,"y":12,"w":261,"h":50,"layer":1,"to":"912:222","t":{"type":"DISSOLVE","dir":null,"dur":0.3}}],"timeout":null,"fixed":[{"i":0,"x":0,"y":0,"w":390,"h":101,"anchor":"top","sheet":10,"sx":410,"sy":0,"img":"img/912-116_f0.webp"},{"i":1,"x":0,"y":1112,"w":390,"h":113,"anchor":"bottom","sheet":10,"sx":820,"sy":0,"img":"img/912-116_f1.webp"}],"dots":null,"typing":false,"sheet":10,"sx":0,"sy":0,"img":"img/912-116.webp"},{"id":"906:220","name":"G2 · Stays in New York","w":390,"h":844,"hs":[{"x":346,"y":171,"w":28,"h":28,"layer":-1,"to":"906:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":305.5,"y":423,"w":57,"h":30,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":16,"y":806,"w":358,"h":18,"layer":-1,"to":"906:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":11,"sx":0,"sy":0,"img":"img/906-220.webp"},{"id":"911:125","name":"I1c · Map view","w":390,"h":844,"hs":[{"x":17,"y":53.5,"w":36,"h":36,"layer":-1,"to":"BACK","t":{"type":"INSTANT"}},{"x":256,"y":56.5,"w":32,"h":30,"layer":-1,"to":"907:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":90.5,"y":789.5,"w":66,"h":15,"layer":-1,"to":"907:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":11,"sx":410,"sy":0,"img":"img/911-125.webp"},{"id":"912:222","name":"K2 · Plan after first booking","w":390,"h":2763,"hs":[{"x":31.5,"y":219.5,"w":327,"h":42,"layer":-1,"to":"913:116","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":32,"y":642,"w":326,"h":42,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":322,"y":925.5,"w":37,"h":15,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":322,"y":1289.5,"w":37,"h":15,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":17,"y":53,"w":36,"h":36,"layer":0,"to":"BACK","t":{"type":"INSTANT"}}],"timeout":null,"fixed":[{"i":0,"x":0,"y":0,"w":390,"h":102,"anchor":"top","sheet":12,"sx":410,"sy":0,"img":"img/912-222_f0.webp"},{"i":1,"x":0,"y":2584.4,"w":390,"h":179,"anchor":"bottom","sheet":12,"sx":820,"sy":0,"img":"img/912-222_f1.webp"}],"dots":null,"typing":false,"sheet":12,"sx":0,"sy":0,"img":"img/912-222.webp"},{"id":"906:116","name":"G1 · NY on our own, rest later","w":390,"h":844,"hs":[{"x":303,"y":423,"w":40,"h":14,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":35,"y":534,"w":320,"h":42,"layer":-1,"to":"906:220","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":13,"sx":0,"sy":0,"img":"img/906-116.webp"},{"id":"913:116","name":"K3 · Share the plan with family","w":390,"h":844,"hs":[{"x":346,"y":262,"w":28,"h":28,"layer":-1,"to":"912:222","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":13,"sx":410,"sy":0,"img":"img/913-116.webp"},{"id":"882:117","name":"C9 · Addresses → getting around","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"934:4836","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":13,"sx":820,"sy":0,"img":"img/882-117.webp"},{"id":"934:4836","name":"T → C10","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"885:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":13,"sx":1230,"sy":0,"img":"img/934-4836.webp"},{"id":"885:116","name":"C10 · Why flights cost this much","w":390,"h":844,"hs":[{"x":20,"y":557,"w":123,"h":34,"layer":-1,"to":"934:5185","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":14,"sx":0,"sy":0,"img":"img/885-116.webp"},{"id":"934:5185","name":"T → C11","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"890:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":14,"sx":410,"sy":0,"img":"img/934-5185.webp"},{"id":"890:116","name":"C11 · Made simple, not final","w":390,"h":844,"hs":[{"x":33,"y":540,"w":156.8,"h":38,"layer":-1,"to":"895:116","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":197.8,"y":540,"w":159.2,"h":38,"layer":-1,"to":"890:242","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":14,"sx":820,"sy":0,"img":"img/890-116.webp"},{"id":"895:116","name":"C11b · Compare all 3","w":390,"h":844,"hs":[{"x":346,"y":323.8,"w":28,"h":28,"layer":-1,"to":"890:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":16,"y":701.2,"w":358,"h":50,"layer":-1,"to":"934:5516","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":16,"y":810.2,"w":358,"h":18,"layer":-1,"to":"890:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":14,"sx":1230,"sy":0,"img":"img/895-116.webp"},{"id":"890:242","name":"C12 · Cleartrip search peeks in","w":390,"h":844,"hs":[{"x":16,"y":742,"w":358,"h":50,"layer":-1,"to":"891:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":16,"y":804,"w":358,"h":18,"layer":-1,"to":"890:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":15,"sx":0,"sy":0,"img":"img/890-242.webp"},{"id":"934:5516","name":"T → F1","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"905:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":15,"sx":410,"sy":0,"img":"img/934-5516.webp"},{"id":"891:116","name":"C13 · Cleartrip results with Gema","w":390,"h":844,"hs":[{"x":190,"y":768,"w":186.5,"h":52,"layer":-1,"to":"890:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":15,"sx":820,"sy":0,"img":"img/891-116.webp"},{"id":"905:116","name":"F1 · Plan updated (5 Jan)","w":390,"h":844,"hs":[{"x":20,"y":517,"w":95,"h":34,"layer":-1,"to":"934:6054","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":15,"sx":1230,"sy":0,"img":"img/905-116.webp"},{"id":"934:6054","name":"T → F2","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"905:267","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":16,"sx":0,"sy":0,"img":"img/934-6054.webp"},{"id":"905:267","name":"F2 · Before stays","w":390,"h":844,"hs":[{"x":35,"y":478,"w":320,"h":54,"layer":-1,"to":"934:6343","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":16,"sx":410,"sy":0,"img":"img/905-267.webp"},{"id":"934:6343","name":"T → G1","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"906:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":16,"sx":820,"sy":0,"img":"img/934-6343.webp"}]};
+const byId = {}; G.screens.forEach(s => byId[s.id] = s);
+const device = document.getElementById('device');
+const history = []; let current = null, timer = null;
+
+G.screens.forEach(s => { new Image().src = s.img; s.fixed.forEach(f => new Image().src = f.img); });
+
+function fit() {
+  const k = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+  device.style.transform = 'scale(' + k + ')';
+  device.style.borderRadius = (window.innerWidth < 500 ? 0 : 36) + 'px';
+}
+window.addEventListener('resize', fit); fit();
+
+function hotspot(h, parent) {
+  const d = document.createElement('div');
+  d.className = 'hs';
+  Object.assign(d.style, { left: h.x + 'px', top: h.y + 'px', width: h.w + 'px', height: h.h + 'px' });
+  d.addEventListener('click', e => { e.stopPropagation(); h.to === 'BACK' ? back() : go(h.to, h.t); });
+  parent.appendChild(d);
+}
+
+function build(s) {
+  const el = document.createElement('div'); el.className = 'screen';
+  const sc = document.createElement('div'); sc.className = 'scroller';
+  const ct = document.createElement('div'); ct.className = 'content'; ct.style.height = s.h + 'px';
+  const img = document.createElement('img'); img.src = s.img; img.alt = s.name; ct.appendChild(img);
+  s.hs.filter(h => h.layer < 0).forEach(h => hotspot(h, ct));
+  if (s.dots) {
+    const d = document.createElement('div'); d.className = 'dots';
+    Object.assign(d.style, { left: s.dots.x + 'px', top: s.dots.y + 'px', width: s.dots.w + 'px', height: s.dots.h + 'px' });
+    d.innerHTML = '<i></i><i></i><i></i>'; ct.appendChild(d);
+  }
+  sc.appendChild(ct); el.appendChild(sc);
+  s.fixed.forEach(f => {
+    const fx = document.createElement('div'); fx.className = 'fixed';
+    fx.style.height = f.h + 'px'; fx.style[f.anchor === 'top' ? 'top' : 'bottom'] = '0px';
+    const fi = document.createElement('img'); fi.src = f.img; fx.appendChild(fi);
+    s.hs.filter(h => h.layer === f.i).forEach(h => hotspot(h, fx));
+    el.appendChild(fx);
+  });
+  el.addEventListener('click', () => { document.body.classList.add('hint'); setTimeout(() => document.body.classList.remove('hint'), 600); });
+  return el;
+}
+
+function show(id, t, isBack) {
+  const s = byId[id]; if (!s) return;
+  clearTimeout(timer);
+  const el = build(s);
+  const type = (t && t.type) || 'INSTANT';
+  const dur = Math.round(((t && t.dur) || 0.3) * 1000);
+  el.style.setProperty('--d', dur + 'ms');
+  let cls = '';
+  if (isBack) cls = 'enter-fade';
+  else if (type === 'MOVE_IN' && t.dir === 'LEFT') cls = 'enter-left';
+  else if (type === 'MOVE_IN' && t.dir === 'TOP') cls = 'enter-up';
+  else if (type === 'SMART_ANIMATE') cls = 'enter-chat';
+  else if (type === 'DISSOLVE') cls = 'enter-fade';
+  const old = device.querySelector('.screen:last-child');
+  if (cls) el.classList.add(cls);
+  device.appendChild(el);
+  if (s.h > 844 && !isBack) el.querySelector('.scroller').scrollTop = 0;
+  const cleanup = () => { device.querySelectorAll('.screen').forEach(x => { if (x !== el) x.remove(); }); };
+  if (cls) setTimeout(cleanup, dur + 30); else cleanup();
+  current = id;
+  if (s.timeout) {
+    const ms = s.timeout.ms < 100 ? s.timeout.ms * 1000 : s.timeout.ms;
+    timer = setTimeout(() => go(s.timeout.to, s.timeout.t, true), ms);
+  }
+}
+
+function go(id, t, auto) {
+  if (current && !(byId[current].typing) && !(byId[current].timeout && auto)) history.push(current);
+  show(id, t, false);
+}
+function back() { const prev = history.pop(); if (prev) show(prev, null, true); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'r' || e.key === 'R') { history.length = 0; show(G.start); }
+  if (e.key === 'Backspace' || e.key === 'ArrowLeft') back();
+});
+show(G.start);
+</script>
+</body>
+</html>
