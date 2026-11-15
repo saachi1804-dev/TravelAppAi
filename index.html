@@ -28,6 +28,8 @@
   .list { margin-top: auto; padding: 64px 20px 12px; display: flex; flex-direction: column; gap: 8px; }
   .msg { position: relative; align-self: flex-start; animation: msgIn .28s cubic-bezier(.2,1.3,.35,1) both; transform-origin: bottom left; }
   .msg img { width: 100%; height: 100%; }
+  .msg:not(.me):not(.chips) > img { border-radius: 18px 18px 18px 6px; }
+  .msg.me > img { border-radius: 18px 18px 6px 18px; }
   .msg.me { align-self: flex-end; transform-origin: bottom right; }
   .bubble { max-width: 300px; padding: 12px 14px; background: #14121A; color: #fff; font-weight: 600; font-size: 15px; line-height: 1.4; border-radius: 18px 18px 6px 18px; white-space: pre-wrap; word-break: break-word; }
   .msg.leaving { animation: msgOut .28s ease-in both; }
