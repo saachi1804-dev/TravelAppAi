@@ -4,120 +4,386 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Gema · Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600&display=swap" rel="stylesheet">
 <style>
-  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; -webkit-tap-highlight-color: transparent; font-family: Manrope, sans-serif; }
   #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
-  #device { position: relative; width: 390px; height: 844px; transform-origin: center center; border-radius: 36px; overflow: hidden; background: #000; }
-  .screen { position: absolute; inset: 0; background: transparent; will-change: transform, opacity; }
+  #device { position: relative; width: 390px; height: 844px; flex: none; transform-origin: center center; border-radius: 36px; overflow: hidden; background: #EAE6DE; }
+  .abs { position: absolute; }
+  img { display: block; user-select: none; -webkit-user-drag: none; }
+  .screen { position: absolute; inset: 0; z-index: 20; will-change: transform, opacity; }
   .scroller { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; overscroll-behavior: contain; }
-  .scroller::-webkit-scrollbar { display: none; }
+  .scroller::-webkit-scrollbar, .msgs::-webkit-scrollbar { display: none; }
   .content { position: relative; width: 390px; }
-  .content > img, .fixed > img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+  .content > img, .fixed > img { width: 100%; height: 100%; pointer-events: none; }
   .fixed { position: absolute; left: 0; width: 390px; z-index: 5; }
-  .hs { position: absolute; cursor: pointer; border-radius: 10px; z-index: 6; }
+  .hs { position: absolute; cursor: pointer; border-radius: 12px; z-index: 6; }
   .hs:active { background: rgba(255,79,22,.10); }
-  body.hint .hs { background: rgba(255,79,22,.18); outline: 1.5px solid rgba(255,79,22,.6); transition: background .2s; }
-  .dots { position: absolute; z-index: 4; display: flex; gap: 6px; align-items: center; justify-content: center; }
-  .dots i { width: 8px; height: 8px; border-radius: 50%; background: #FF4F16; animation: blink 1s infinite ease-in-out; }
-  .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
-  @keyframes blink { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+  body.hint .hs.on { background: rgba(255,79,22,.16); outline: 1.5px solid rgba(255,79,22,.55); }
+
+  #chat { position: absolute; inset: 0; display: none; z-index: 10; }
+  #chat.on { display: block; animation: fadeIn .35s ease-out both; }
+  .msgs { position: absolute; left: 0; right: 0; top: 96px; bottom: 193px; overflow-y: auto; scrollbar-width: none; display: flex; flex-direction: column; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px); mask-image: linear-gradient(to bottom, transparent 0, #000 22px); }
+  .list { margin-top: auto; padding: 64px 20px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .msg { position: relative; align-self: flex-start; animation: msgIn .38s cubic-bezier(.2,.8,.2,1) both; transform-origin: bottom left; }
+  .msg img { width: 100%; height: 100%; }
+  .msg.me { align-self: flex-end; transform-origin: bottom right; }
+  .bubble { max-width: 300px; padding: 12px 14px; background: #14121A; color: #fff; font-weight: 600; font-size: 15px; line-height: 1.4; border-radius: 18px 18px 6px 18px; white-space: pre-wrap; word-break: break-word; }
+  .msg.leaving { animation: msgOut .28s ease-in both; }
+  .typing { width: 70px; height: 38px; border-radius: 18px 18px 18px 6px; background: rgba(255,255,255,.92); display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .typing i { width: 8px; height: 8px; border-radius: 50%; background: #FF4F16; animation: blink 1s infinite ease-in-out; }
+  .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+  #ctext { position: absolute; left: 36px; top: 671px; width: 318px; font-size: 15px; line-height: 21px; color: #A39C95; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #ctext.typed { color: #14121A; white-space: normal; max-height: 63px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  #ctext.typed::after { content: ''; display: inline-block; width: 2px; height: 17px; background: #FF4F16; margin-left: 1px; vertical-align: -3px; animation: caret .8s steps(1) infinite; }
+  #send { position: absolute; left: 314px; top: 736px; width: 44px; height: 44px; border-radius: 50%; cursor: pointer; z-index: 6; }
+  #send.wait { animation: pulse 1.6s ease-out infinite; }
+  #send.press { transform: scale(.88); transition: transform .12s; background: rgba(255,255,255,.15); }
+  #compHit { position: absolute; left: 20px; top: 659px; width: 290px; height: 70px; cursor: text; z-index: 5; }
+  #fab, #work { display: none; z-index: 7; cursor: pointer; }
+  #fab.on, #work.on { display: block; animation: pop .45s cubic-bezier(.2,1.4,.4,1) both; }
+  #work img { border-radius: 24px; }
+
   .enter-fade { animation: fadeIn var(--d) ease-out both; }
   .enter-left { animation: inLeft var(--d) cubic-bezier(.2,.8,.2,1) both; }
-  .enter-up { animation: inUp var(--d) cubic-bezier(.2,.9,.25,1.05) both; }
-  .enter-chat { animation: chatIn var(--d) ease-out both; }
-  .leave-fade { animation: fadeOut var(--d) ease-out both; }
+  .enter-up { animation: inUp var(--d) cubic-bezier(.2,.9,.25,1.04) both; }
+  .leave { animation: fadeOut .25s ease-out both; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-  @keyframes inLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
-  @keyframes inUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-  @keyframes chatIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes inLeft { from { transform: translateX(100%); } to { transform: none; } }
+  @keyframes inUp { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+  @keyframes msgOut { to { opacity: 0; transform: translateY(6px) scale(.97); height: 0; margin-top: -8px; } }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25; transform: none; } 40% { opacity: 1; transform: translateY(-3px); } }
+  @keyframes caret { 50% { opacity: 0; } }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,79,22,.55); } 70% { box-shadow: 0 0 0 12px rgba(255,79,22,0); } 100% { box-shadow: 0 0 0 0 rgba(255,79,22,0); } }
+  @keyframes pop { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+
+  .msg.reveal img { animation: reveal var(--rv, 700ms) cubic-bezier(.3,.1,.3,1) both; }
+  @keyframes reveal { from { clip-path: inset(0 0 100% 0 round 18px); opacity: .4; } to { clip-path: inset(0 0 0 0 round 0); opacity: 1; } }
+  .loader { width: 350px; box-sizing: border-box; padding: 14px 16px; border-radius: 18px 18px 18px 6px; background: rgba(255,255,255,.92); color: #14121A; font-size: 13px; }
+  .loader h4 { margin: 0 0 10px; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .spin { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid #FFD2BC; border-top-color: #FF4F16; animation: rot .8s linear infinite; box-sizing: border-box; flex: none; }
+  .loader .row { display: flex; align-items: center; gap: 8px; padding: 5px 0; color: #8A8A8A; transition: color .3s; }
+  .loader .row b { width: 16px; height: 16px; flex: none; display: flex; align-items: center; justify-content: center; }
+  .loader .row.doing { color: #14121A; } .loader .row.done { color: #14121A; }
+  .loader .row.done b::before { content: '✓'; color: #1E7A46; font-weight: 700; font-size: 13px; animation: pop .3s both; }
+  .loader .row.doing b::before { content: ''; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #FFD2BC; border-top-color: #FF4F16; animation: rot .8s linear infinite; }
+  .loader .row:not(.doing):not(.done) b::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #D6CEC4; }
+  .bar { height: 6px; border-radius: 3px; background: #F1E4DA; margin-top: 10px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#FF7A3D,#FF4F16); border-radius: 3px; transition: width .9s ease; }
+  #workSpin { position: absolute; left: 15px; top: 14px; width: 20px; height: 20px; border-radius: 50%; background: #0B0A0D; }
+  #workSpin::after { content: ''; position: absolute; inset: 1px; border-radius: 50%; border: 2.5px solid #FFD2BC; border-top-color: #FF4F16; animation: rot .9s linear infinite; }
+  #fab::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 2.5px solid transparent; border-top-color: #FF4F16; border-right-color: #FF7A3D; opacity: 0; transition: opacity .2s; }
+  #fab.busy::after { opacity: 1; animation: rot .9s linear infinite; }
+  @keyframes rot { to { transform: rotate(360deg); } }
+  .saved { position: absolute; left: 0; top: 40px; width: 162px; justify-content: center; height: 34px; padding: 0 12px; border-radius: 17px; background: #FFEDE3; color: #C43C0B; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; animation: pop .35s cubic-bezier(.2,1.4,.4,1) both; box-sizing: border-box; }
+  .note { max-width: 300px; padding: 10px 14px; border-radius: 18px 18px 18px 6px; background: rgba(255,255,255,.92); font-size: 14px; font-weight: 500; color: #14121A; line-height: 1.45; }
+  .note a { color: #C43C0B; font-weight: 600; text-decoration: none; cursor: pointer; display: inline-block; margin-top: 4px; }
+  #sheet { position: absolute; inset: 0; z-index: 30; display: none; }
+  #sheet.on { display: block; }
+  #sheet .scrim { position: absolute; inset: 0; background: rgba(20,18,26,.35); animation: fadeIn .25s both; }
+  #sheet .panel { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 26px 26px 0 0; padding: 10px 18px 28px; animation: inUp .35s cubic-bezier(.2,.9,.25,1.04) both; color: #14121A; }
+  #sheet .grab { width: 40px; height: 4px; border-radius: 2px; background: #D9D9D9; margin: 0 auto 14px; }
+  #sheet h3 { margin: 0; font-size: 20px; font-weight: 600; } #sheet p.sub { margin: 4px 0 14px; color: #6E6862; font-size: 13px; }
+  #sheet .item { border: 1px solid #ECE6DF; border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.45; }
+  #sheet .item small { display: block; color: #8A8A8A; font-weight: 600; font-size: 10px; letter-spacing: .04em; margin-bottom: 2px; }
+  #sheet .item.new { border-color: #FFB896; background: #FFF6F1; animation: pop .4s both; }
+  #sheet .tag { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 9px; background: #FFEDE3; color: #C43C0B; font-weight: 600; font-size: 11px; }
+  #sheet .x { position: absolute; right: 16px; top: 18px; width: 28px; height: 28px; border-radius: 50%; background: #F1EEEA; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; }
 </style>
 </head>
 <body>
-<div id="stage"><div id="device"></div></div>
+<div id="stage"><div id="device">
+  <div id="chat">
+    <img class="abs" src="chat/bg.webp" style="left:0;top:0;width:390px;height:844px">
+    <div class="msgs" id="msgs"><div class="list" id="list"></div></div>
+    <img class="abs" src="chat/header.webp" style="left:20px;top:52px;width:350px;height:40px">
+    <div class="hs abs" id="more" style="left:330px;top:52px;width:40px;height:40px"></div>
+    <div class="abs" id="fab" style="left:327.5px;top:104px;width:48px;height:48px"><img src="chat/fab.webp" style="width:48px;height:48px"></div>
+    <div class="abs" id="work" style="left:160px;top:104px;width:214px;height:48px"><img src="chat/work.webp" style="width:214px;height:48px"><div id="workSpin"></div></div>
+    <img class="abs" src="chat/composer.webp" style="left:20px;top:659px;width:350px;height:161px">
+    <div id="ctext"></div>
+    <div id="compHit"></div>
+    <div id="send"></div>
+  </div>
+  <div id="sheet"><div class="scrim"></div><div class="panel"><div class="grab"></div><div class="x">×</div><h3>What Gema remembers</h3><p class="sub">You decide what stays. Tap any item to change or remove it.</p><div id="mem"></div></div></div>
+</div></div>
 <script>
 const G = {"start":"864:116","screens":[{"id":"864:116","name":"00 · Welcome","w":390,"h":844,"hs":[{"x":28,"y":748,"w":334,"h":56,"layer":-1,"to":"864:147","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.5}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":0,"sx":0,"sy":0,"img":"img/864-116.webp"},{"id":"864:147","name":"01 · Home (Solo)","w":390,"h":844,"hs":[{"x":197,"y":124,"w":82.5,"h":38,"layer":-1,"to":"864:265","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":0,"sx":410,"sy":0,"img":"img/864-147.webp"},{"id":"864:265","name":"02 · Preparing family trip","w":390,"h":844,"hs":[],"timeout":{"ms":1.4,"to":"853:117","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.5}},"fixed":[],"dots":null,"typing":false,"sheet":0,"sx":820,"sy":0,"img":"img/864-265.webp"},{"id":"853:117","name":"Home","w":390,"h":844,"hs":[{"x":20,"y":616,"w":350,"h":161,"layer":-1,"to":"862:235","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":0,"sx":1230,"sy":0,"img":"img/853-117.webp"},{"id":"862:235","name":"V1 · Typed: visa expiring","w":390,"h":844,"hs":[{"x":314,"y":693,"w":44,"h":44,"layer":-1,"to":"869:247","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":1,"sx":0,"sy":0,"img":"img/862-235.webp"},{"id":"869:247","name":"S1 · Gema is typing","w":390,"h":844,"hs":[],"timeout":{"ms":1600,"to":"866:117","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},"fixed":[],"dots":null,"typing":false,"sheet":1,"sx":410,"sy":0,"img":"img/869-247.webp"},{"id":"866:117","name":"FB1 · Ask to add family","w":390,"h":844,"hs":[{"x":35,"y":558,"w":280,"h":44,"layer":-1,"to":"866:176","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":1,"sx":820,"sy":0,"img":"img/866-117.webp"},{"id":"866:176","name":"FB2 · Family builder (up to 6)","w":390,"h":844,"hs":[{"x":20,"y":436,"w":350,"h":214,"layer":-1,"to":"869:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},{"x":20,"y":765,"w":350,"h":52,"layer":-1,"to":"871:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":1,"sx":1230,"sy":0,"img":"img/866-176.webp"},{"id":"869:116","name":"FB2b · Papa’s needs (long-haul)","w":390,"h":844,"hs":[{"x":20,"y":80,"w":36,"h":36,"layer":-1,"to":"866:176","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},{"x":20,"y":758,"w":350,"h":52,"layer":-1,"to":"866:176","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":2,"sx":0,"sy":0,"img":"img/869-116.webp"},{"id":"871:116","name":"CF1 · Family added","w":390,"h":844,"hs":[{"x":330,"y":52,"w":40,"h":40,"layer":-1,"to":"871:218","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":20,"y":659,"w":350,"h":161,"layer":-1,"to":"873:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":2,"sx":410,"sy":0,"img":"img/871-116.webp"},{"id":"871:218","name":"CF2 · More menu","w":390,"h":844,"hs":[{"x":330,"y":52,"w":40,"h":40,"layer":-1,"to":"871:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":2,"sx":820,"sy":0,"img":"img/871-218.webp"},{"id":"873:116","name":"D1 · Typing dates","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"934:3252","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":2,"sx":1230,"sy":0,"img":"img/873-116.webp"},{"id":"934:3252","name":"T → D2","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"873:198","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":3,"sx":0,"sy":0,"img":"img/934-3252.webp"},{"id":"873:198","name":"D2 · Gema checks the dates","w":390,"h":844,"hs":[{"x":35,"y":463,"w":320,"h":59,"layer":-1,"to":"877:117","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":3,"sx":410,"sy":0,"img":"img/873-198.webp"},{"id":"877:117","name":"C1 · Which coast?","w":390,"h":844,"hs":[{"x":20,"y":493,"w":171.5,"h":110,"layer":-1,"to":"934:3535","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":3,"sx":820,"sy":0,"img":"img/877-117.webp"},{"id":"934:3535","name":"T → C2","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"877:218","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":3,"sx":1230,"sy":0,"img":"img/934-3535.webp"},{"id":"877:218","name":"C2 · Ideas or clean slate?","w":390,"h":844,"hs":[{"x":20,"y":613,"w":133.4,"h":34,"layer":-1,"to":"934:3779","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":4,"sx":0,"sy":0,"img":"img/877-218.webp"},{"id":"934:3779","name":"T → C3","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"877:310","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":4,"sx":410,"sy":0,"img":"img/934-3779.webp"},{"id":"877:310","name":"C3 · Noted, with a heads-up","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"934:3996","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":4,"sx":820,"sy":0,"img":"img/877-310.webp"},{"id":"934:3996","name":"T → C4","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"878:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":4,"sx":1230,"sy":0,"img":"img/934-3996.webp"},{"id":"878:116","name":"C4 · Screenshot → cities found","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"878:230","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":5,"sx":0,"sy":0,"img":"img/878-116.webp"},{"id":"878:230","name":"C5 · Flying from, and budget","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"934:4252","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":5,"sx":410,"sy":0,"img":"img/878-230.webp"},{"id":"934:4252","name":"T → C6","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"878:325","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":609,"w":70,"h":38},"typing":true,"sheet":5,"sx":820,"sy":0,"img":"img/934-4252.webp"},{"id":"878:325","name":"C6 · Building the itinerary","w":390,"h":844,"hs":[{"x":160,"y":104,"w":214,"h":48,"layer":-1,"to":"880:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":5,"sx":1230,"sy":0,"img":"img/878-325.webp"},{"id":"880:116","name":"C7 · Gema is working (expanded)","w":390,"h":844,"hs":[{"x":280,"y":72,"w":92,"h":32,"layer":-1,"to":"878:325","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":{"ms":2.5,"to":"881:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.4}},"fixed":[],"dots":null,"typing":false,"sheet":6,"sx":0,"sy":0,"img":"img/880-116.webp"},{"id":"881:116","name":"C8 · Itinerary ready","w":390,"h":844,"hs":[{"x":35,"y":530,"w":320,"h":46,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":20,"y":659,"w":350,"h":161,"layer":-1,"to":"934:4478","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":221,"y":104,"w":149,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":6,"sx":410,"sy":0,"img":"img/881-116.webp"},{"id":"907:116","name":"I1b · Your USA plan","w":390,"h":2584,"hs":[{"x":32,"y":463,"w":326,"h":42,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":264,"y":606.5,"w":97,"h":28,"layer":-1,"to":"912:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":322,"y":746.5,"w":37,"h":15,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":322,"y":1110.5,"w":37,"h":15,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":247,"y":1468,"w":112,"h":28,"layer":-1,"to":"906:220","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":17,"y":53,"w":36,"h":36,"layer":0,"to":"BACK","t":{"type":"INSTANT"}},{"x":290,"y":56,"w":32,"h":30,"layer":0,"to":"911:125","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":146.4,"y":56,"w":226.6,"h":48,"layer":1,"to":"912:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[{"i":0,"x":0,"y":0,"w":390,"h":102,"anchor":"top","sheet":7,"sx":410,"sy":0,"img":"img/907-116_f0.webp"},{"i":1,"x":0,"y":2405.4,"w":390,"h":179,"anchor":"bottom","sheet":7,"sx":820,"sy":0,"img":"img/907-116_f1.webp"}],"dots":null,"typing":false,"sheet":7,"sx":0,"sy":0,"img":"img/907-116.webp"},{"id":"934:4478","name":"T → C9","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"882:117","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":8,"sx":0,"sy":0,"img":"img/934-4478.webp"},{"id":"915:116","name":"D1 · Decisions we haven’t taken yet","w":390,"h":1516,"hs":[{"x":17,"y":53,"w":128,"h":36,"layer":0,"to":"BACK","t":{"type":"INSTANT"}}],"timeout":null,"fixed":[{"i":0,"x":0,"y":0,"w":390,"h":102,"anchor":"top","sheet":9,"sx":410,"sy":0,"img":"img/915-116_f0.webp"},{"i":1,"x":0,"y":1405,"w":390,"h":111,"anchor":"bottom","sheet":9,"sx":820,"sy":0,"img":"img/915-116_f1.webp"}],"dots":null,"typing":false,"sheet":9,"sx":0,"sy":0,"img":"img/915-116.webp"},{"id":"912:116","name":"K1 · Review & book","w":390,"h":1225,"hs":[{"x":16,"y":58.5,"w":24,"h":24,"layer":0,"to":"BACK","t":{"type":"INSTANT"}},{"x":113,"y":12,"w":261,"h":50,"layer":1,"to":"912:222","t":{"type":"DISSOLVE","dir":null,"dur":0.3}}],"timeout":null,"fixed":[{"i":0,"x":0,"y":0,"w":390,"h":101,"anchor":"top","sheet":10,"sx":410,"sy":0,"img":"img/912-116_f0.webp"},{"i":1,"x":0,"y":1112,"w":390,"h":113,"anchor":"bottom","sheet":10,"sx":820,"sy":0,"img":"img/912-116_f1.webp"}],"dots":null,"typing":false,"sheet":10,"sx":0,"sy":0,"img":"img/912-116.webp"},{"id":"906:220","name":"G2 · Stays in New York","w":390,"h":844,"hs":[{"x":346,"y":171,"w":28,"h":28,"layer":-1,"to":"906:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":305.5,"y":423,"w":57,"h":30,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":16,"y":806,"w":358,"h":18,"layer":-1,"to":"906:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":11,"sx":0,"sy":0,"img":"img/906-220.webp"},{"id":"911:125","name":"I1c · Map view","w":390,"h":844,"hs":[{"x":17,"y":53.5,"w":36,"h":36,"layer":-1,"to":"BACK","t":{"type":"INSTANT"}},{"x":256,"y":56.5,"w":32,"h":30,"layer":-1,"to":"907:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":90.5,"y":789.5,"w":66,"h":15,"layer":-1,"to":"907:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":11,"sx":410,"sy":0,"img":"img/911-125.webp"},{"id":"912:222","name":"K2 · Plan after first booking","w":390,"h":2763,"hs":[{"x":31.5,"y":219.5,"w":327,"h":42,"layer":-1,"to":"913:116","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":32,"y":642,"w":326,"h":42,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":322,"y":925.5,"w":37,"h":15,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":322,"y":1289.5,"w":37,"h":15,"layer":-1,"to":"915:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":17,"y":53,"w":36,"h":36,"layer":0,"to":"BACK","t":{"type":"INSTANT"}}],"timeout":null,"fixed":[{"i":0,"x":0,"y":0,"w":390,"h":102,"anchor":"top","sheet":12,"sx":410,"sy":0,"img":"img/912-222_f0.webp"},{"i":1,"x":0,"y":2584.4,"w":390,"h":179,"anchor":"bottom","sheet":12,"sx":820,"sy":0,"img":"img/912-222_f1.webp"}],"dots":null,"typing":false,"sheet":12,"sx":0,"sy":0,"img":"img/912-222.webp"},{"id":"906:116","name":"G1 · NY on our own, rest later","w":390,"h":844,"hs":[{"x":303,"y":423,"w":40,"h":14,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}},{"x":35,"y":534,"w":320,"h":42,"layer":-1,"to":"906:220","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":13,"sx":0,"sy":0,"img":"img/906-116.webp"},{"id":"913:116","name":"K3 · Share the plan with family","w":390,"h":844,"hs":[{"x":346,"y":262,"w":28,"h":28,"layer":-1,"to":"912:222","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":13,"sx":410,"sy":0,"img":"img/913-116.webp"},{"id":"882:117","name":"C9 · Addresses → getting around","w":390,"h":844,"hs":[{"x":314,"y":736,"w":44,"h":44,"layer":-1,"to":"934:4836","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":13,"sx":820,"sy":0,"img":"img/882-117.webp"},{"id":"934:4836","name":"T → C10","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"885:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":13,"sx":1230,"sy":0,"img":"img/934-4836.webp"},{"id":"885:116","name":"C10 · Why flights cost this much","w":390,"h":844,"hs":[{"x":20,"y":557,"w":123,"h":34,"layer":-1,"to":"934:5185","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":14,"sx":0,"sy":0,"img":"img/885-116.webp"},{"id":"934:5185","name":"T → C11","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"890:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":14,"sx":410,"sy":0,"img":"img/934-5185.webp"},{"id":"890:116","name":"C11 · Made simple, not final","w":390,"h":844,"hs":[{"x":33,"y":540,"w":156.8,"h":38,"layer":-1,"to":"895:116","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":197.8,"y":540,"w":159.2,"h":38,"layer":-1,"to":"890:242","t":{"type":"MOVE_IN","dir":"TOP","dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":14,"sx":820,"sy":0,"img":"img/890-116.webp"},{"id":"895:116","name":"C11b · Compare all 3","w":390,"h":844,"hs":[{"x":346,"y":323.8,"w":28,"h":28,"layer":-1,"to":"890:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}},{"x":16,"y":701.2,"w":358,"h":50,"layer":-1,"to":"934:5516","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":16,"y":810.2,"w":358,"h":18,"layer":-1,"to":"890:116","t":{"type":"DISSOLVE","dir":null,"dur":0.25}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":14,"sx":1230,"sy":0,"img":"img/895-116.webp"},{"id":"890:242","name":"C12 · Cleartrip search peeks in","w":390,"h":844,"hs":[{"x":16,"y":742,"w":358,"h":50,"layer":-1,"to":"891:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":16,"y":804,"w":358,"h":18,"layer":-1,"to":"890:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":15,"sx":0,"sy":0,"img":"img/890-242.webp"},{"id":"934:5516","name":"T → F1","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"905:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":15,"sx":410,"sy":0,"img":"img/934-5516.webp"},{"id":"891:116","name":"C13 · Cleartrip results with Gema","w":390,"h":844,"hs":[{"x":190,"y":768,"w":186.5,"h":52,"layer":-1,"to":"890:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":15,"sx":820,"sy":0,"img":"img/891-116.webp"},{"id":"905:116","name":"F1 · Plan updated (5 Jan)","w":390,"h":844,"hs":[{"x":20,"y":517,"w":95,"h":34,"layer":-1,"to":"934:6054","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":15,"sx":1230,"sy":0,"img":"img/905-116.webp"},{"id":"934:6054","name":"T → F2","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"905:267","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":16,"sx":0,"sy":0,"img":"img/934-6054.webp"},{"id":"905:267","name":"F2 · Before stays","w":390,"h":844,"hs":[{"x":35,"y":478,"w":320,"h":54,"layer":-1,"to":"934:6343","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.35}},{"x":327.5,"y":104,"w":48,"h":48,"layer":-1,"to":"907:116","t":{"type":"MOVE_IN","dir":"LEFT","dur":0.35}}],"timeout":null,"fixed":[],"dots":null,"typing":false,"sheet":16,"sx":410,"sy":0,"img":"img/905-267.webp"},{"id":"934:6343","name":"T → G1","w":390,"h":844,"hs":[],"timeout":{"ms":1150,"to":"906:116","t":{"type":"SMART_ANIMATE","dir":null,"dur":0.3}},"fixed":[],"dots":{"x":20,"y":553,"w":70,"h":38},"typing":true,"sheet":16,"sx":820,"sy":0,"img":"img/934-6343.webp"}]};
+const C = {"screens":[{"id":"866:117","items":[{"kind":"user","text":"My USA visitor visa expires in 2 months","hs":[]},{"kind":"gema","eid":0,"hs":[{"x":15,"y":149,"w":280,"h":44,"to":"866:176","label":"Add family members"}]}],"frameHs":[]},{"id":"871:116","items":[{"kind":"user","text":"My USA visitor visa expires in 2 months","hs":[]},{"kind":"gema","eid":1,"hs":[]},{"kind":"gema","eid":2,"hs":[]},{"kind":"chips","eid":3,"hs":[]}],"frameHs":[{"x":330,"y":52,"w":40,"h":40,"to":"871:218","name":"More"},{"x":20,"y":659,"w":350,"h":161,"to":"873:116","name":"Composer"}]},{"id":"873:198","items":[{"kind":"user","text":"21st dec to 3rd jan, 2 weeks","hs":[]},{"kind":"gema","eid":5,"hs":[{"x":15,"y":249,"w":320,"h":59,"to":"877:117","label":"21 Dec – 3 Jan"}]},{"kind":"chips","eid":6,"hs":[]}],"frameHs":[]},{"id":"877:117","items":[{"kind":"gema","eid":7,"hs":[]},{"kind":"gema","eid":8,"hs":[{"x":0,"y":0,"w":171.5,"h":110,"to":"934:3535","label":"West Coast"}]},{"kind":"chips","eid":9,"hs":[]}],"frameHs":[]},{"id":"877:218","items":[{"kind":"user","text":"West Coast","hs":[]},{"kind":"gema","eid":11,"hs":[]},{"kind":"chips","eid":12,"hs":[{"x":0,"y":0,"w":133.4,"h":34,"to":"934:3779","label":"I have a few ideas"}]}],"frameHs":[]},{"id":"877:310","items":[{"kind":"user","text":"I have a few relatives, my sister’s kids, in a few cities there. I’d love to visit them, and of course the kids want to see Times Square.","hs":[]},{"kind":"gema","eid":13,"hs":[]},{"kind":"chips","eid":14,"hs":[]},{"kind":"gema","eid":15,"hs":[]}],"frameHs":[{"x":314,"y":736,"w":44,"h":44,"to":"934:3996","name":"Send"}]},{"id":"878:116","items":[{"kind":"userimg","eid":17,"hs":[]},{"kind":"gema","eid":18,"hs":[]},{"kind":"gema","eid":19,"hs":[]}],"frameHs":[{"x":314,"y":736,"w":44,"h":44,"to":"878:230","name":"Send"}]},{"id":"878:230","items":[{"kind":"user","text":"No, Vadodara is good.","hs":[]},{"kind":"gema","eid":20,"hs":[]},{"kind":"chips","eid":21,"hs":[]}],"frameHs":[{"x":314,"y":736,"w":44,"h":44,"to":"934:4252","name":"Send"}]},{"id":"878:325","items":[{"kind":"user","text":"I’m not too sure. What do trips like these cost? Flights maybe 70k one way per person? Can you build an itinerary first and we’ll see after that?","hs":[]},{"kind":"gema","eid":22,"hs":[]}],"frameHs":[{"x":160,"y":104,"w":214,"h":48,"to":"880:116","name":"Working indicator"}]},{"id":"881:116","items":[{"kind":"gema","eid":23,"hs":[{"x":15,"y":366,"w":320,"h":46,"to":"907:116","label":"Open itinerary"}]}],"frameHs":[{"x":20,"y":659,"w":350,"h":161,"to":"934:4478","name":"Composer"}]},{"id":"882:117","items":[{"kind":"user","text":"maps.app.goo.gl/k8WqR2\nmaps.app.goo.gl/T4mZx9\nHere’s where they live. Can you add how we’ll get there?","hs":[]},{"kind":"gema","eid":24,"hs":[]},{"kind":"chips","eid":25,"hs":[]}],"frameHs":[{"x":314,"y":736,"w":44,"h":44,"to":"934:4836","name":"Send"}]},{"id":"885:116","items":[{"kind":"user","text":"I checked the flight budget but it seems expensive.","hs":[]},{"kind":"gema","eid":26,"hs":[]},{"kind":"chips","eid":27,"hs":[{"x":0,"y":0,"w":123,"h":34,"to":"934:5185","label":"How can I save?"}]}],"frameHs":[]},{"id":"890:116","items":[{"kind":"user","text":"How can I save?","hs":[]},{"kind":"user","text":"This is too overwhelming.","hs":[]},{"kind":"gema","eid":28,"hs":[{"x":13,"y":319,"w":156.8,"h":38,"to":"895:116","label":"Compare all 3"},{"x":177.8,"y":319,"w":159.2,"h":38,"to":"890:242","label":"See flights myself"}]}],"frameHs":[]},{"id":"905:116","items":[{"kind":"user","text":"Let’s come back on 5 Jan.","hs":[]},{"kind":"gema","eid":29,"hs":[]},{"kind":"chips","eid":30,"hs":[{"x":0,"y":0,"w":95,"h":34,"to":"934:6054","label":"Looks good"}]}],"frameHs":[]},{"id":"905:267","items":[{"kind":"user","text":"Looks good","hs":[]},{"kind":"gema","eid":31,"hs":[{"x":15,"y":264,"w":320,"h":54,"to":"934:6343","label":"Not sure yet"}]}],"frameHs":[]},{"id":"906:116","items":[{"kind":"user","text":"Not sure about San Jose and Seattle yet, actually. In New York we’ll be on our own.","hs":[]},{"kind":"gema","eid":32,"hs":[{"x":283,"y":56,"w":40,"h":14,"to":"907:116","label":"See log"},{"x":15,"y":167,"w":320,"h":42,"to":"906:220","label":"See stays in New York"}]}],"frameHs":[]}],"chrome":{"header":{"x":20,"y":52,"w":350,"h":40},"composer":{"x":20,"y":659,"w":350,"h":161},"composerText":{"x":16,"y":14,"w":322,"h":21},"fab":{"x":327.5,"y":104,"w":48,"h":48},"work":{"x":160,"y":104,"w":214,"h":48},"badge":[{"k":"badge_885:222","x":359.28,"y":104.6},{"k":"badge_885:223","x":356.87,"y":102.14}]},"place":{"e0":{"x":0,"y":0,"w":310,"h":238},"e1":{"x":0,"y":250,"w":350,"h":96},"e2":{"x":0,"y":358,"w":310,"h":103},"e3":{"x":0,"y":473,"w":350,"h":34},"e5":{"x":0,"y":634,"w":350,"h":389},"e6":{"x":0,"y":1035,"w":350,"h":34},"e7":{"x":0,"y":1081,"w":310,"h":118},"e8":{"x":0,"y":1211,"w":350,"h":110},"e9":{"x":0,"y":1333,"w":350,"h":34},"e11":{"x":0,"y":1438,"w":310,"h":89},"e12":{"x":0,"y":1539,"w":350,"h":34},"e13":{"x":0,"y":1585,"w":310,"h":155},"e14":{"x":0,"y":1752,"w":350,"h":34},"e15":{"x":0,"y":1798,"w":310,"h":110},"e17":{"x":0,"y":2021,"w":350,"h":174},"e18":{"x":0,"y":2207,"w":310,"h":215},"e19":{"x":0,"y":2434,"w":310,"h":110},"e20":{"x":410,"y":0,"w":310,"h":89},"e21":{"x":410,"y":101,"w":350,"h":34},"e22":{"x":410,"y":147,"w":310,"h":189},"e23":{"x":410,"y":348,"w":350,"h":427},"e24":{"x":410,"y":787,"w":350,"h":210},"e25":{"x":410,"y":1009,"w":350,"h":74},"e26":{"x":410,"y":1095,"w":350,"h":387},"e27":{"x":410,"y":1494,"w":350,"h":34},"e28":{"x":410,"y":1540,"w":350,"h":370},"e29":{"x":410,"y":1922,"w":350,"h":227},"e30":{"x":410,"y":2161,"w":350,"h":74},"e31":{"x":820,"y":0,"w":350,"h":377},"e32":{"x":820,"y":389,"w":350,"h":224},"header":{"x":820,"y":625,"w":350,"h":40},"composer":{"x":820,"y":677,"w":350,"h":161},"bg":{"x":820,"y":850,"w":390,"h":844},"fab":{"x":820,"y":1706,"w":48,"h":48},"work":{"x":820,"y":1766,"w":214,"h":48},"badge_885:222":{"x":820,"y":1826,"w":12,"h":12},"badge_885:223":{"x":820,"y":1850,"w":12,"h":12}}};
 const byId = {}; G.screens.forEach(s => byId[s.id] = s);
+const seg = {}; C.screens.forEach(s => seg[s.id] = s);
+const P = C.place;
 const device = document.getElementById('device');
-const history = []; let current = null, timer = null;
+const chat = document.getElementById('chat'), msgs = document.getElementById('msgs'), list = document.getElementById('list');
+const ctext = document.getElementById('ctext'), send = document.getElementById('send'), fab = document.getElementById('fab');
+const wait = ms => new Promise(r => setTimeout(r, ms));
 
 G.screens.forEach(s => { new Image().src = s.img; s.fixed.forEach(f => new Image().src = f.img); });
+Object.keys(P).forEach(k => { new Image().src = 'chat/' + k.replace(':', '-') + '.webp'; });
 
 function fit() {
-  const k = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+  const k = Math.min((window.innerWidth - 32) / 390, (window.innerHeight - 56) / 844);
   device.style.transform = 'scale(' + k + ')';
-  device.style.borderRadius = (window.innerWidth < 500 ? 0 : 36) + 'px';
 }
 window.addEventListener('resize', fit); fit();
 
-function hotspot(h, parent) {
-  const d = document.createElement('div');
-  d.className = 'hs';
-  Object.assign(d.style, { left: h.x + 'px', top: h.y + 'px', width: h.w + 'px', height: h.h + 'px' });
-  d.addEventListener('click', e => { e.stopPropagation(); h.to === 'BACK' ? back() : go(h.to, h.t); });
-  parent.appendChild(d);
+const ALIAS = { '873:116': '873:198', '869:247': '866:117' };
+function resolve(id) {
+  let g = 0;
+  while (g++ < 6) {
+    if (ALIAS[id]) { id = ALIAS[id]; continue; }
+    const s = byId[id];
+    if (s && s.typing && s.timeout) { id = s.timeout.to; continue; }
+    break;
+  }
+  return id;
 }
 
-function build(s) {
+// ---------- image screens ----------
+let inChat = false, overlays = [], preHistory = [], current = null, timer = null, busy = false, cur = null;
+const played = new Set();
+
+function hotspot(h, parent, ctx) {
+  const d = document.createElement('div');
+  d.className = 'hs on';
+  Object.assign(d.style, { left: h.x + 'px', top: h.y + 'px', width: h.w + 'px', height: h.h + 'px' });
+  d.addEventListener('click', e => { e.stopPropagation(); if (h.to === 'BACK') back(); else go(h.to, h.t, ctx || {}); });
+  parent.appendChild(d);
+}
+function buildScreen(s) {
   const el = document.createElement('div'); el.className = 'screen';
   const sc = document.createElement('div'); sc.className = 'scroller';
   const ct = document.createElement('div'); ct.className = 'content'; ct.style.height = s.h + 'px';
-  const img = document.createElement('img'); img.src = s.img; img.alt = s.name; ct.appendChild(img);
-  s.hs.filter(h => h.layer < 0).forEach(h => hotspot(h, ct));
-  if (s.dots) {
-    const d = document.createElement('div'); d.className = 'dots';
-    Object.assign(d.style, { left: s.dots.x + 'px', top: s.dots.y + 'px', width: s.dots.w + 'px', height: s.dots.h + 'px' });
-    d.innerHTML = '<i></i><i></i><i></i>'; ct.appendChild(d);
-  }
+  const img = document.createElement('img'); img.src = s.img; ct.appendChild(img);
+  s.hs.filter(h => h.layer < 0).forEach(h => hotspot(h, ct, { fromOverlay: true }));
   sc.appendChild(ct); el.appendChild(sc);
   s.fixed.forEach(f => {
     const fx = document.createElement('div'); fx.className = 'fixed';
     fx.style.height = f.h + 'px'; fx.style[f.anchor === 'top' ? 'top' : 'bottom'] = '0px';
     const fi = document.createElement('img'); fi.src = f.img; fx.appendChild(fi);
-    s.hs.filter(h => h.layer === f.i).forEach(h => hotspot(h, fx));
+    s.hs.filter(h => h.layer === f.i).forEach(h => hotspot(h, fx, { fromOverlay: true }));
     el.appendChild(fx);
   });
-  el.addEventListener('click', () => { document.body.classList.add('hint'); setTimeout(() => document.body.classList.remove('hint'), 600); });
   return el;
 }
-
-function show(id, t, isBack) {
-  const s = byId[id]; if (!s) return;
-  clearTimeout(timer);
-  const el = build(s);
+function animClass(t, isBack) {
   const type = (t && t.type) || 'INSTANT';
-  const dur = Math.round(((t && t.dur) || 0.3) * 1000);
-  el.style.setProperty('--d', dur + 'ms');
-  let cls = '';
-  if (isBack) cls = 'enter-fade';
-  else if (type === 'MOVE_IN' && t.dir === 'LEFT') cls = 'enter-left';
-  else if (type === 'MOVE_IN' && t.dir === 'TOP') cls = 'enter-up';
-  else if (type === 'SMART_ANIMATE') cls = 'enter-chat';
-  else if (type === 'DISSOLVE') cls = 'enter-fade';
-  const old = device.querySelector('.screen:last-child');
-  if (cls) el.classList.add(cls);
-  device.appendChild(el);
-  if (s.h > 844 && !isBack) el.querySelector('.scroller').scrollTop = 0;
-  const cleanup = () => { device.querySelectorAll('.screen').forEach(x => { if (x !== el) x.remove(); }); };
-  if (cls) setTimeout(cleanup, dur + 30); else cleanup();
-  current = id;
+  if (isBack) return 'enter-fade';
+  if (type === 'MOVE_IN' && t.dir === 'LEFT') return 'enter-left';
+  if (type === 'MOVE_IN' && t.dir === 'TOP') return 'enter-up';
+  if (type === 'INSTANT') return '';
+  return 'enter-fade';
+}
+function scheduleTimeout(s) {
+  clearTimeout(timer);
   if (s.timeout) {
     const ms = s.timeout.ms < 100 ? s.timeout.ms * 1000 : s.timeout.ms;
-    timer = setTimeout(() => go(s.timeout.to, s.timeout.t, true), ms);
+    timer = setTimeout(() => go(s.timeout.to, s.timeout.t, { auto: true }), ms);
+  }
+}
+function showPre(id, t, isBack) {
+  const s = byId[id]; if (!s) return;
+  const el = buildScreen(s); const cls = animClass(t, isBack);
+  el.style.setProperty('--d', Math.round(((t && t.dur) || .3) * 1000) + 'ms');
+  if (cls) el.classList.add(cls);
+  device.appendChild(el);
+  const olds = [...device.querySelectorAll('.screen')].filter(x => x !== el);
+  setTimeout(() => olds.forEach(o => o.remove()), cls ? 420 : 0);
+  current = id; scheduleTimeout(s);
+}
+function openOverlay(id, t) {
+  const s = byId[id]; if (!s) return;
+  const el = buildScreen(s); const cls = animClass(t, false) || 'enter-fade';
+  el.style.setProperty('--d', Math.round(((t && t.dur) || .3) * 1000) + 'ms');
+  el.classList.add(cls); device.appendChild(el);
+  overlays.push({ id, el }); scheduleTimeout(s);
+}
+function closeOverlays() {
+  clearTimeout(timer);
+  overlays.forEach(o => { o.el.classList.add('leave'); setTimeout(() => o.el.remove(), 260); });
+  overlays = [];
+}
+function back() {
+  if (inChat) {
+    const o = overlays.pop(); if (!o) return;
+    o.el.classList.add('leave'); setTimeout(() => o.el.remove(), 260);
+    const top = overlays[overlays.length - 1]; clearTimeout(timer); if (top) scheduleTimeout(byId[top.id]);
+    return;
+  }
+  const prev = preHistory.pop(); if (prev) showPre(prev, null, true);
+}
+
+function go(id, t, ctx) {
+  ctx = ctx || {};
+  const r = resolve(id);
+  if (seg[r]) {
+    closeOverlays();
+    if (!inChat) enterChat();
+    if (!played.has(r)) play(r, ctx);
+    return;
+  }
+  if (!inChat) {
+    if (current && !(ctx.auto && byId[current].timeout)) preHistory.push(current);
+    showPre(r, t, false);
+  } else {
+    openOverlay(r, t);
   }
 }
 
-function go(id, t, auto) {
-  if (current && !(byId[current].typing) && !(byId[current].timeout && auto)) history.push(current);
-  show(id, t, false);
+// ---------- chat ----------
+function enterChat() {
+  inChat = true; chat.classList.add('on');
+  device.querySelectorAll('.screen').forEach(x => { x.classList.add('leave'); setTimeout(() => x.remove(), 260); });
+  clearTimeout(timer);
 }
-function back() { const prev = history.pop(); if (prev) show(prev, null, true); }
+function scrollDown() { requestAnimationFrame(() => msgs.scrollTo({ top: msgs.scrollHeight, behavior: 'smooth' })); }
+function addEl(node) { list.appendChild(node); scrollDown(); return node; }
+function userBubble(text) {
+  const m = document.createElement('div'); m.className = 'msg me';
+  const b = document.createElement('div'); b.className = 'bubble'; b.textContent = text; m.appendChild(b);
+  return addEl(m);
+}
+function imageMsg(item, me) {
+  const p = P['e' + item.eid];
+  const m = document.createElement('div'); m.className = 'msg' + (me ? ' me' : '') + (item.kind === 'chips' ? ' chips' : '');
+  m.style.width = p.w + 'px'; m.style.height = p.h + 'px';
+  const img = document.createElement('img'); img.src = 'chat/e' + item.eid + '.webp'; m.appendChild(img);
+  if (item.kind === 'gema') { m.classList.add('reveal'); m.style.setProperty('--rv', Math.min(1100, 300 + p.h * 2) + 'ms'); }
+  if (item.eid === 25) { const d = document.createElement('div'); d.className = 'hs on'; Object.assign(d.style, { left: '0px', top: '40px', width: '162px', height: '34px' }); d.addEventListener('click', e => { e.stopPropagation(); remember(m); }); m.appendChild(d); }
+  (item.hs || []).forEach(h => {
+    const d = document.createElement('div'); d.className = 'hs on';
+    Object.assign(d.style, { left: h.x + 'px', top: h.y + 'px', width: h.w + 'px', height: h.h + 'px' });
+    d.addEventListener('click', e => { e.stopPropagation(); if (busy) return; go(h.to, null, { chipLabel: h.label, fromChat: true }); });
+    m.appendChild(d);
+  });
+  return addEl(m);
+}
+async function typingDots(ms) {
+  const m = document.createElement('div'); m.className = 'msg';
+  m.innerHTML = '<div class="typing"><i></i><i></i><i></i></div>';
+  addEl(m); fab.classList.add('busy'); await wait(ms); m.remove(); fab.classList.remove('busy');
+}
+async function typeInComposer(text) {
+  ctext.classList.add('typed'); ctext.textContent = '';
+  const step = Math.max(10, Math.min(32, 1500 / text.length));
+  for (let i = 1; i <= text.length; i++) { ctext.textContent = text.slice(0, i); await wait(step); }
+  await wait(250);
+  send.classList.add('press'); await wait(140); send.classList.remove('press');
+  ctext.classList.remove('typed'); ctext.textContent = placeholderFor(cur);
+}
+function removeChips() {
+  list.querySelectorAll('.msg.chips').forEach(c => { c.classList.add('leaving'); setTimeout(() => c.remove(), 280); });
+  list.querySelectorAll('.msg .hs').forEach(h => h.classList.remove('on'));
+}
+let lastUser = '';
+const PH = { '871:116': 'Type your travel dates. They can be tentative.', '905:267': 'Tell me what you need from a stay…' };
+function placeholderFor(id) { return PH[id] || 'Type or paste anything…'; }
+const composerNext = {};
+C.screens.forEach(s => (s.frameHs || []).forEach(h => { if (h.name === 'Composer' || h.name === 'Send') composerNext[s.id] = h.to; }));
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'r' || e.key === 'R') { history.length = 0; show(G.start); }
-  if (e.key === 'Backspace' || e.key === 'ArrowLeft') back();
+async function play(id, ctx) {
+  busy = true; played.add(id); cur = id; send.classList.remove('wait');
+  document.getElementById('work').classList.remove('on');
+  const s = seg[id];
+  removeChips();
+  const lm = document.getElementById('loaderMsg'); if (lm && id !== '878:325') { lm.classList.add('leaving'); setTimeout(() => lm.remove(), 280); }
+  let items = s.items.filter(it => !(it.kind === 'user' && it.text === lastUser));
+  let firstUser = true, prevKind = 'start';
+  if (ctx.chipLabel && ctx.fromChat && (!items.length || (items[0].kind !== 'user' && items[0].kind !== 'userimg'))) {
+    userBubble(ctx.chipLabel); lastUser = ctx.chipLabel; prevKind = 'user'; firstUser = false; await wait(350);
+  }
+  for (const it of items) {
+    if (it.kind === 'user') {
+      const instant = firstUser && (ctx.fromOverlay || (ctx.chipLabel && ctx.chipLabel.trim() === it.text.trim()) || id === '866:117');
+      if (!instant) await typeInComposer(it.text);
+      userBubble(it.text); lastUser = it.text; firstUser = false; prevKind = 'user'; await wait(300);
+    } else if (it.kind === 'userimg') {
+      imageMsg(it, true); firstUser = false; prevKind = 'user'; await wait(400);
+    } else {
+      if (it.kind === 'gema') {
+        const p = P['e' + it.eid];
+        await typingDots(prevKind === 'user' || prevKind === 'start' ? 900 + Math.min(700, p.h * 1.5) : 650);
+      } else await wait(250);
+      imageMsg(it, false); prevKind = it.kind; await wait(it.kind === 'chips' ? 150 : 420);
+    }
+  }
+  ctext.textContent = placeholderFor(id);
+  busy = false;
+  if (composerNext[id]) send.classList.add('wait');
+  if (id === '878:325') {
+    document.getElementById('work').classList.add('on');
+    buildLoader();
+  }
+  if (id === '881:116') document.getElementById('fab').classList.add('on');
+}
+
+
+async function buildLoader() {
+  await wait(600);
+  const m = document.createElement('div'); m.className = 'msg'; m.id = 'loaderMsg';
+  m.innerHTML = '<div class="loader"><h4><span class="spin"></span>Building your plan</h4>' +
+    ['Flights from Vadodara, Christmas week', 'Homes near Ishaan and Meera', 'US flights between the 3 cities', 'Times Square, after the New Year crowds']
+      .map(s => '<div class="row"><b></b>' + s + '</div>').join('') + '<div class="bar"><i></i></div></div>';
+  addEl(m);
+  const rows = m.querySelectorAll('.row'), bar = m.querySelector('.bar i');
+  for (let i = 0; i < rows.length; i++) {
+    if (cur !== '878:325') return;
+    rows[i].classList.add('doing'); bar.style.width = ((i + .5) / rows.length * 100) + '%';
+    await wait(850);
+    rows[i].classList.remove('doing'); rows[i].classList.add('done');
+  }
+  bar.style.width = '100%'; await wait(500);
+  if (cur === '878:325' && !overlays.length) go('881:116', null, { auto: true });
+}
+let remembered = false;
+async function remember(chips) {
+  if (remembered || busy) return; remembered = true;
+  const s = document.createElement('div'); s.className = 'saved';
+  s.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="#C43C0B"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>Saved';
+  chips.appendChild(s);
+  await typingDots(700);
+  const n = document.createElement('div'); n.className = 'msg reveal';
+  n.innerHTML = '<div class="note">Saved. I’ll remind you before booking, so you can decide on the airport pickups later.<br><a>See what I remember ›</a></div>';
+  n.querySelector('a').addEventListener('click', e => { e.stopPropagation(); openMem(); });
+  addEl(n);
+}
+function openMem() {
+  const items = [
+    ['FAMILY', '6 travellers: you, Neha, Riya (4), Aarav (9), Mummy and Papa'],
+    ['PAPA’S NEEDS', 'Less walking, ground floor or lift, wheelchair at airports'],
+    ['TRIP', '21 Dec – 5 Jan · San Jose, Seattle, New York · from Vadodara']
+  ];
+  let h = items.map(i => '<div class="item"><small>' + i[0] + '</small>' + i[1] + '</div>').join('');
+  if (remembered) h = '<div class="item new"><small>SAVED JUST NOW</small>Airport pickups: Ishaan picks you up, or book a rental<br><span class="tag">I’ll remind you before booking</span></div>' + h;
+  document.getElementById('mem').innerHTML = h;
+  document.getElementById('sheet').classList.add('on');
+}
+document.querySelector('#sheet .x').addEventListener('click', () => document.getElementById('sheet').classList.remove('on'));
+document.querySelector('#sheet .scrim').addEventListener('click', () => document.getElementById('sheet').classList.remove('on'));
+
+function composerTap() {
+  if (!inChat || busy) return;
+  const n = composerNext[cur]; if (n) go(n, null, { fromComposer: true });
+}
+document.getElementById('compHit').addEventListener('click', composerTap);
+send.addEventListener('click', composerTap);
+document.getElementById('fab').addEventListener('click', () => { if (!busy) go('907:116', { type: 'MOVE_IN', dir: 'LEFT', dur: .35 }, {}); });
+document.getElementById('work').addEventListener('click', () => go('880:116', { type: 'DISSOLVE', dur: .25 }, {}));
+document.getElementById('more').addEventListener('click', () => { if (busy) return; if (cur === '871:116') go('871:218', { type: 'DISSOLVE', dur: .25 }, {}); else openMem(); });
+
+device.addEventListener('click', e => {
+  if (e.target.closest('.hs') || e.target.id === 'send' || e.target.id === 'compHit') return;
+  document.body.classList.add('hint'); setTimeout(() => document.body.classList.remove('hint'), 650);
 });
-show(G.start);
+document.addEventListener('keydown', e => {
+  if (e.key === 'r' || e.key === 'R') location.reload();
+  if (e.key === 'Escape' || e.key === 'ArrowLeft') back();
+});
+ctext.textContent = placeholderFor('');
+showPre(G.start);
 </script>
 </body>
 </html>
